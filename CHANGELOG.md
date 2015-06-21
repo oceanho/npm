@@ -1,3 +1,144 @@
+### v3.0.0 (2015-06-25):
+
+Wow, it's finally here!  This has been a long time coming.  @othiym23 and
+@izs have been talking about the changes in this release for well over a
+year, and it's been the primary focus of @ReBeccaOrg since she joined npm.
+
+It consitutes a rewrite of the npm installer to be easier to maintain and to
+bring a bunch of valuable new changes to you all.
+
+This was a big rewrite and as such, we expect there to be bugs.  npm@3 is
+going to be in beta until we're comfortable with its stability. During that
+time we will still be doing npm@2 releases and npm@2 will be tagged latest &
+next.  Meanwhile there will be npm@3.0-next and npm@3.0-latest avaliable for
+your use.
+
+5622d25 Add fetch-package-metadata to stand in front of the cache
+
+Not user-visible
+
+81b46fb Update github specific code to be git host agnostic
+
+Extend the support for hosted git repositories other than github beyond just
+installation.  Specifically, this means that we can now intuit the correctly
+urls for bugs & repo commands for bitbucket and gitlab the same way it does
+for github.
+
+#### THE AGE OF PROGRESS (BARS)
+
+The spinner is gone and now we have progress bars so you actually have some
+sense of how long installs will take.  It's provided in unicode and
+non-unicode variants and unicode support is now detected from your
+environment.
+
+#### TARBALL TEMP FOLDER CRUFT
+
+9ebe312 We now clean up after ourselves in your tempfolder better.
+
+#### MULTI-STAGE INSTALLER
+
+Previously the installer had a set of steps it executed for each package and
+it would immediately start executing them as soon as it decided to act on a
+package.
+
+But now it executes each of those steps at the same time for all packages,
+waiting for all of one stage to complete before moving on.  This eliminates
+many race conditions and makes the code easier to reason about.
+
+#### FLAT, FLAT, FLAT
+
+Your dependencies will now be installed "maximally flat".  That is to say,
+in so far as is possible, all of your dependencies will be installed in your
+project's node_modules folder with no nesting.  Now, you'll only get nesting
+when your dependencies require conflicting versions of the same module.
+
+This also means that your installs were be intrinsically deduped.
+
+This has some implications on the behavior of other commands...
+
+* `npm ls` now shows you your dependency tree organized around what requires
+  what, rather than where those modules are on disk.
+* `npm dedupe` now flattens the tree in addition to deduping.
+* `npm uninstall` removes any dependencies of the module that you specified
+  that aren't required by any other module. Previously it would only remove
+  those that happened to be installed under it, resulting in left over cruft
+  if you'd ever deduped.
+* bundledDependencies no longer requires that you specify deduped sub deps.
+  npm can now see that a dependency is required by something bundled and
+  automaticlaly include it.
+
+#### INSTALL, IT LOOKS DIFFERENT
+
+You'll now get a tree a la `npm ls` that highlights in orange the packages
+that were installed.
+
+#### IDEMPOTENT SHRINKWRAPS
+
+Yup, they should be exactly the same every time now, including normalized
+`_from` fields.
+
+#### SHRINKWRAPS, THEY ARE A CHANGIN'
+
+First of all, they should be idempotent now.  No more differences because
+the first time you installed w/o an npm-shrinkwrap.json and the second time
+you did.
+
+Second, if you save your changes to the `package.json` and you have an
+`npm-shrinkwrap.json` then it will be updated as well.  This applies
+to all of the commands that update your tree:
+
+* `npm install --save`
+* `npm update --save`
+* `npm dedupe --save`
+* `npm uninstall --save`
+
+#### OUTDATED OUTPUT DIFFERENCES
+
+Previously `npm outdated` would include the name
+of the module in the Location field:
+
+```
+Package                Current  Wanted  Latest  Location
+deep-equal             MISSING   1.0.0   1.0.0  deep-equal
+glob                     4.5.3   4.5.3  5.0.10  rimraf > glob
+```
+
+Now it will show the module that required it as the final
+point in the Location field:
+
+```
+Package                Current  Wanted  Latest  Location
+deep-equal             MISSING   1.0.0   1.0.0  npm
+glob                     4.5.3   4.5.3  5.0.10  npm > rimraf
+```
+
+Previously the Location field was telling you where
+the module was on disk. Now it tells you what requires
+the module. When more than one thing requires the module
+you'll see it listed once for each thing requiring it.
+
+#### MISC
+
+[a2b50cf]() [#5693]() When installing a new module, if it's mentioned in
+your `npm-shrinkwrap.json` or your `package.json` use the version specifier
+from there if you didn't specify one yourself.
+
+Check for permissions issues prior to actually trying to install anything.
+
+Emit warnings at the end of the installation when possible, so that they'll
+be on your screen when npm stops.
+
+#### BREAKING
+
+Declaring peerDependencies will no longer result in the specified modules
+being installed if they're otherwise missing. Instead, it will now warn if
+they're missing, but it's up to the consumer of the module to provide the
+modules.
+
+#### npm ITSELF
+
+The npm dependencies are flattened and deduped in the npm@3 style.
+
 ### v2.12.0 (2015-06-18):
 
 #### REMEMBER WHEN I SAID THAT THING ABOUT PERMISSIONS?
